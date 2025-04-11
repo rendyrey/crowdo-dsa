@@ -1,0 +1,51 @@
+Yes, this controller will update the article and then update again based on the genre.
+
+Tips:
+- We can make it better by make the logic centralized before saving
+- Use transaction for multiple data changes to prevent inconsistant behavior
+- This conditional statement:
+
+if article.genre == 'Pop'
+  ...
+elsif article.genre == 'Animals'
+  ...
+end
+
+can be placed in model concerns and it will be better if we use case instead of if statement in this case.
+
+Example make a function in the article model:
+def apply_genre_rules!
+    case genre
+    when 'Pop'
+        self.publish_date = Date.today + 1.month
+        self.status = 'pending_review'
+    when 'Animals'
+        self.publish_date = Date.today + 2.weeks
+        self.status = 'pending_approval'
+    end
+end
+
+and apply it into controller like this:
+
+class ArticlesController < ApplicationController
+  def update
+    article = Article.find(params[:id])
+    article.assign_attributes(form_params)
+    article.apply_genre_rules!
+
+    Article.transaction do
+      article.save!
+
+      if article.status == 'pending_review'
+        writer = article.writer
+        if writer.articles.count > 10
+          writer.status = 'pending_upgrade_review'
+          writer.save!
+          SendWriterUpgradeMail.perform_now(writer)
+        end
+      end
+    end
+  end
+end
+
+

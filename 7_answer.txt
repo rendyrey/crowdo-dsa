@@ -1,0 +1,11 @@
+Issue:
+1. Ambiguous on created_at since articles & comments may have this column. Need the column prefix
+Example:
+articles.created_at & comments.created_at
+
+2. There's SQL injection risk because #{params[:date]} is interpolates into SQL
+using '?' symbol.
+Example:
+.where("publish_date >= ?", params[:date])
+
+This will not return Ambiguous column if it's not fixed yet.
